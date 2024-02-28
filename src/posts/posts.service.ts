@@ -1,64 +1,32 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
-import { Model } from 'mongoose';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Post } from './post.model';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class PostsService {
-  constructor(@InjectModel('Post') private readonly postModel: Model<Post>) {}
+  constructor(@InjectModel('Post') private readonly postModel: Model<any>) {}
 
-  async getAllPosts(): Promise<Post[]> {
+  async getAllPosts(): Promise<any[]> {
     return await this.postModel.find().exec();
   }
 
-  async getPost(id: string): Promise<Post | null> {
-    try {
-      const post = await this.postModel.findById(id).exec();
-      if (!post) {
-        throw new NotFoundException('Publicación no encontrada');
-      }
-      return post;
-    } catch (error: any) {
-      throw new InternalServerErrorException(error.message);
-    }
+  async getPostByIdPost(idPost: string): Promise<any | null> {
+    // Aquí cambiamos la consulta para buscar por id_post en lugar de _id
+    return await this.postModel.findOne({ id_post: idPost }).exec();
   }
 
-  async createPost(postData: any): Promise<Post> {
-    try {
-      const createdPost = new this.postModel(postData); // No es necesario asignar _id manualmente
-      return await createdPost.save();
-    } catch (error: any) {
-      throw new InternalServerErrorException(error.message);
-    }
+  async createPost(postData: any): Promise<any> {
+    const createdPost = new this.postModel(postData);
+    return await createdPost.save();
   }
 
-  async updatePost(id: string, postData: any): Promise<Post | null> {
-    try {
-      const existingPost = await this.postModel.findById(id).exec();
-      if (!existingPost) {
-        throw new NotFoundException('Publicación no encontrada');
-      }
-
-      // Actualizar los campos de la publicación existente
-      existingPost.title = postData.title;
-      existingPost.content = postData.content;
-
-      // Guardar los cambios en la base de datos
-      return await existingPost.save();
-    } catch (error: any) {
-      throw new InternalServerErrorException(error.message);
-    }
+  async updatePostByIdPost(idPost: string, postData: any): Promise<any> {
+    // Aquí actualizamos para usar id_post. Nota: { new: true } para devolver el documento actualizado
+    return await this.postModel.findOneAndUpdate({ id_post: idPost }, postData, { new: true }).exec();
   }
 
-  async deletePost(id: string): Promise<void> {
-    try {
-      await this.postModel.findByIdAndDelete(id).exec();
-    } catch (error: any) {
-      throw new InternalServerErrorException(error.message);
-    }
+  async deletePostByIdPost(idPost: string): Promise<any> {
+    // Aquí eliminamos por id_post
+    return await this.postModel.findOneAndDelete({ id_post: idPost }).exec();
   }
 }
